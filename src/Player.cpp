@@ -2,7 +2,7 @@
 #include <iostream>
 
 Player::Player(float pos_x, float pos_y)
-    : m_shape({20, 20})
+    : m_shape({30, 30})
     , m_pos(m_shape.getPosition())
 {
     m_shape.setFillColor(sf::Color::Green);
@@ -33,14 +33,24 @@ void Player::update(float delta)
 
     if (m_isFlying)
     {
-        //std::cout << "Yahoooo! We're in air now! :p" << std::endl;
         m_vel.y += g * delta;
     }
 
     sf::Vector2f newPos = m_pos + m_vel * delta;
 
     if (newPos.y >= Consts::HEIGHT - m_shape.getSize().y / 2.0f)
+    {
         newPos.y = Consts::HEIGHT - m_shape.getSize().y / 2.0f;
+        m_isFlying = false;
+        m_vel.y = 0.0f;
+    }
+
+    if (newPos.y < m_shape.getSize().y / 2.0f)
+    {
+        newPos.y = m_shape.getSize().y / 2.0f;
+        m_vel.y = 0;
+    }
+
     if (newPos.x < m_shape.getSize().x / 2.0f)
     {
         newPos.x = m_shape.getSize().x / 2.0f;
@@ -53,13 +63,6 @@ void Player::update(float delta)
     }
 
     m_shape.setPosition(newPos);
-
-    if (m_isFlying && bottom() == Consts::HEIGHT - 1)
-    {
-        m_isFlying = false;
-        m_vel.y = 0.0f;
-    }
-
     m_lastDelta = delta;
 }
 
@@ -79,9 +82,9 @@ void Player::move(Direction dir)
         if (!m_isFlying)
         {
             m_isFlying = true;
-            std::cout << "Nu tut tipo prigaem" << std::endl;
-            m_vel.y = -v0_y;
+            //m_vel.y = -v0_y; // apply acceleration
         }
+        m_vel.y = -v0_y; // instantly apply speed, like in Flappy Bird
         break;
     default:
         break;
@@ -106,5 +109,10 @@ float Player::top() const
 float Player::bottom() const
 {
     return m_shape.getGlobalBounds().top + m_shape.getSize().y - 1;
+}
+
+sf::FloatRect Player::getBounds() const
+{
+    return m_shape.getGlobalBounds();
 }
 

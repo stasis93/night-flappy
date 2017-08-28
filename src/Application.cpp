@@ -1,19 +1,24 @@
 #include "Application.h"
 #include <iostream>
+#include <algorithm>
+#include "random.h"
 
 Application::Application()
     : m_window({Consts::WIDTH, Consts::HEIGHT}, "GAEM!1")
+    , m_stateManager(*this)
 {
+    Random::init();
     m_window.setFramerateLimit(60);
+    m_stateManager.requestPushState(GameState::Playing);
 }
 
 void Application::run()
 {
     while (m_window.isOpen())
     {
-        //std::cout << "Main loop iteration" << std::endl;
-
-        pollEvents();
+        m_stateManager.applyPending();
+        auto & state = m_stateManager.currentState();
+        state.pollEvents();
 
         m_currentTimePoint = std::chrono::high_resolution_clock::now();
 
@@ -26,55 +31,20 @@ void Application::run()
         for (; m_currTimeSlice > Consts::fixedTimestepMilli;
                m_currTimeSlice -= Consts::fixedTimestepMilli)
         {
-            //std::cout << "\tUpdate call" << std::endl;
-            handleKbdInput();
-            update(delta);
+            state.update(Consts::fixedTimestepMilli);
         }
-        //std::cout << m_currTimeSlice << std::endl;
 
         m_lastTimePoint = m_currentTimePoint;
-
-        render();
+        state.render();
     }
 }
 
-void Application::pollEvents()
+sf::RenderWindow& Application::window()
 {
-    sf::Event ev;
-    while (m_window.pollEvent(ev))
-    {
-        if (ev.type == sf::Event::Closed)
-            m_window.close();
-    }
+    return m_window;
 }
 
-void Application::update(float deltaTime)
+StateManager& Application::stateManager()
 {
-    m_player.update(deltaTime);
+    return m_stateManager;
 }
-
-void Application::render()
-{
-    m_window.clear();
-    m_window.draw(m_player);
-    m_window.display();
-}
-
-void Application::handleKbdInput()
-{
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-    {
-        m_player.move(Direction::LEFT);
-    } else
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-    {
-        m_player.move(Direction::RIGHT);
-    }
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::W) ||
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-    {
-        m_player.move(Direction::UP);
-    }
-}
-
